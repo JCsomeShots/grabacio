@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Grabación y Reproducción de Audio</title>
+</head>
+<body>
+
+<button id="startRecording">Comenzar Grabación</button>
+<button id="stopRecording" disabled>Detener Grabación</button>
+<button id="playRecording" disabled>Reproducir Grabación</button>
+
+<audio id="audioPlayback" controls style="display: none;"></audio>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let audioBlob;
+
+document.getElementById("startRecording").addEventListener("click", function(){
+    startRecording();
+});
+
+document.getElementById("stopRecording").addEventListener("click", function(){
+    stopRecording();
+});
+
+document.getElementById("playRecording").addEventListener("click", function(){
+    playRecording();
+});
+
+function startRecording() {
+    const constraints = { audio: true };
+    navigator.mediaDevices.getUserMedia(constraints)
+    .then(stream => {
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = event => {
+            audioChunks.push(event.data);
+        };
+        mediaRecorder.start();
+
+        document.getElementById("startRecording").disabled = true;
+        document.getElementById("stopRecording").disabled = false;
+    })
+    .catch(error => console.error('Error accediendo al micrófono:', error));
+}
+
+function stopRecording() {
+    mediaRecorder.stop();
+    mediaRecorder.onstop = () => {
+        audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        audioChunks = [];
+
+        document.getElementById("stopRecording").disabled = true;
+        document.getElementById("playRecording").disabled = false;
+    };
+}
+
+function playRecording() {
+    if (audioBlob) {
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = document.getElementById('audioPlayback');
+        audio.src = audioUrl;
+        audio.style.display = "block";
+        audio.play();
+    }
+}
+</script>
+
+</body>
+</html>
